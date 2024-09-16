@@ -40,7 +40,7 @@ if __name__ == '__main__':
             print("hello world")
         case 'list':
             for task in get_tasks():
-                print(task['name'])
+                print(task.name)
         case 'add':
             name = args.name
             if not name:
