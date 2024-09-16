@@ -1,5 +1,7 @@
 import argparse
 import sqlite3
+from database import SessionLocal
+from models import Task
 
 HELLO = "hello"
 LIST = "list"
@@ -7,12 +9,11 @@ CHOICES = [HELLO, LIST]
 DATABASE = "taskmaster.sqlite"
 
 def get_tasks():
-    con = sqlite3.connect(DATABASE)
-    con.row_factory = sqlite3.Row
-    with con:
-        res = con.execute('SELECT "test" AS name')
-        tasks = res.fetchall()
-    con.close()
+    session = SessionLocal()
+    try:
+        tasks = session.query(Task).all()
+    finally:
+        session.close()
     return tasks
 
 if __name__ == '__main__':
