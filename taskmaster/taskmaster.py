@@ -1,7 +1,7 @@
 import argparse
 import sqlite3
-from database import SessionLocal
-from models import Task
+from taskmaster.database import SessionLocal
+from taskmaster.models import Task
 
 HELLO = "hello"
 LIST = "list"

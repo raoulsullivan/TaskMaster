@@ -13,4 +13,4 @@ Install Python 3.11, Sqlite
 `pip install requirements.txt`
 Create a new database 'taskmaster.sqlite'
 `alembic upgrade head`
-Run `python taskmaster.py hello` and `python taskmaster.py list`
+Run `python -m taskmaster.taskmaster hello` and `python -m taskmaster.taskmaster list`
