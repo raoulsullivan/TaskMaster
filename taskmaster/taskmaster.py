@@ -1,5 +1,4 @@
-import argparse
-import sqlite3
+import click
 from taskmaster.database import SessionLocal
 from taskmaster.models import Task
 
@@ -9,6 +8,10 @@ ADD = 'add'
 CHOICES = [HELLO, LIST, ADD]
 DATABASE = "taskmaster.sqlite"
 
+@click.group()
+def cli():
+    pass
+
 def get_tasks():
     session = SessionLocal()
     try:
@@ -17,6 +20,22 @@ def get_tasks():
         session.close()
     return tasks
 
+@click.command()
+def hello():
+    click.echo("Hello world")
+
+cli.add_command(hello)
+
+@click.command()
+def list():
+    tasks = get_tasks()
+    for task in tasks:
+        click.echo(f'{task.id} - {task.name}')
+
+cli.add_command(list)
+
+@click.command()
+@click.argument('name')
 def add_task(name):
     session = SessionLocal()
     task = Task(name=name)
@@ -26,26 +45,8 @@ def add_task(name):
     finally:
         session.close()
     return task
-   
+
+cli.add_command(add_task)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='TaskMaster')
-    parser.add_argument('command', type=str, choices=CHOICES, 
-                        help='The command for TaskMaster to run.')
-    parser.add_argument('-n', '--name', type=str, 
-                        help='The name of the task to add')
-    args = parser.parse_args()
-    match args.command:
-        case 'hello':
-            print("hello world")
-        case 'list':
-            for task in get_tasks():
-                print(task.name)
-        case 'add':
-            name = args.name
-            if not name:
-                raise ValueError("Name cannot be None")
-            add_task(name)
-            print(f'Task {name} added')
-        case _:
-            raise NotImplementedError("Missing default action")
+    cli()
