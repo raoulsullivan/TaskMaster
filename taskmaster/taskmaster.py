@@ -42,9 +42,9 @@ def add_task(name):
     try:
         session.add(task)
         session.commit()
+        return task
     finally:
         session.close()
-    return task
 
 cli.add_command(add_task)
 
