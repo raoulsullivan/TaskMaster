@@ -9,5 +9,5 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-from models import Base
+from taskmaster.models import Base
 Base.metadata.create_all(bind=engine)
