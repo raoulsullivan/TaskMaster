@@ -1,6 +1,6 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task
+from taskmaster.models import Task, Execution
 
 HELLO = "hello"
 LIST = "list"
@@ -47,6 +47,22 @@ def add_task(name):
     return task
 
 cli.add_command(add_task)
+
+@click.command()
+@click.argument('task_id')
+def execute(task_id):
+    session = SessionLocal()
+    task = session.query(Task).filter(Task.id == task_id).one()
+    execution = Execution(task_id=task.id)
+    try:
+        session.add(execution)
+        session.commit()
+        click.echo(f'Execution {execution.id} added for Task {task.id} - {task.name}')
+        return execution
+    finally:
+        session.close()
+
+cli.add_command(execute)
 
 if __name__ == '__main__':
     cli()
