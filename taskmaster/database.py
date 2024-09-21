@@ -6,6 +6,7 @@ DATABASE_URL = "sqlite:///./taskmaster.sqlite"
 
 engine = create_engine(
     DATABASE_URL,
+    echo=True
 )
 
 # Listen for the SQLite connection and set PRAGMA foreign_keys=ON
