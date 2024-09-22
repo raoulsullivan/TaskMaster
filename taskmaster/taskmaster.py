@@ -1,8 +1,9 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution
+from taskmaster.models import Task, Execution, ExecutionWindow
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc
+from datetime import datetime, timedelta
 
 HELLO = "hello"
 LIST = "list"
@@ -82,6 +83,73 @@ def execute(task_id):
         session.close()
 
 cli.add_command(execute)
+
+@click.group()
+def task():
+    """Task management commands."""
+    pass
+
+cli.add_command(task)
+
+def fuzzy_datetime_validator(input, raise_if_invalid = True):
+    """
+    This helper function will attempt to coerce an input into a datetime. Accepted input formats are:
+    * '%Y-%m-%d %H:%M'
+    * '%Y-%m-%d' (will set 00:00 as time)
+    * '%m-%d' (will set current year and 00:00 as time)
+    """
+    date = None
+    try:
+        date = datetime.strptime(input, '%Y-%m-%d %H:%M')
+    except ValueError:
+        pass
+
+    # This will assume 00:00 is the time
+    try:
+        date = datetime.strptime(input, '%Y-%m-%d')
+    except ValueError:
+        pass
+
+    # This will set the current year and assume 00:00 is the time
+    try:
+        year = datetime.now().year
+        input_with_year = f'{year}-{input}'
+        date = datetime.strptime(input_with_year, '%Y-%m-%d')
+    except ValueError:
+        pass
+
+    if not date and raise_if_invalid:
+        raise ValueError(f'Provided input {input} cannot be coerced to a datetime')
+
+    return date
+
+@click.command()
+@click.argument('task_id')
+def schedule(task_id):
+    session = SessionLocal()
+    try:
+        task = session.query(Task).filter(Task.id == task_id).one()
+        click.echo(f'{task.id} - {task.name}')
+    except NoResultFound:
+        click.echo(f'Task with id {task_id} not found')
+        click.Abort()
+
+    start_datetime_input = click.prompt('Please enter the start date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=datetime.now().strftime("%Y-%m-%d 00:00"))
+    start_datetime = fuzzy_datetime_validator(start_datetime_input)
+
+    default_end_datetime = start_datetime + timedelta(days=1)
+    end_datetime_input = click.prompt('Please enter the end date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=default_end_datetime.strftime("%Y-%m-%d 00:00"))
+    end_datetime = fuzzy_datetime_validator(end_datetime_input)
+
+    execution_window = ExecutionWindow(task_id=task.id, start=start_datetime, end=end_datetime)
+    try:
+        session.add(execution_window)
+        session.commit()
+        click.echo(f'Added an Execution Window ({execution_window.id}) for Task {task.id} - {task.name} between {execution_window.start} and {execution_window.end}')
+    finally:
+        session.close()
+
+task.add_command(schedule)
 
 if __name__ == '__main__':
     cli()
