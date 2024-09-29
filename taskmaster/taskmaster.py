@@ -1,8 +1,8 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution, ExecutionWindow
+from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy import desc
+from sqlalchemy import desc, and_
 from datetime import datetime, timedelta
 
 HELLO = "hello"
@@ -73,11 +73,29 @@ cli.add_command(add_task)
 def execute(task_id):
     session = SessionLocal()
     task = session.query(Task).filter(Task.id == task_id).one()
+    current_time = datetime.utcnow()
+
+    # The "hit" execution window is the one for this task that's currently open
+    hit_execution_window = session.query(ExecutionWindow).filter(
+        and_(
+            ExecutionWindow.task_id == task_id,
+            ExecutionWindow.status == ExecutionWindowStatusEnum.OPEN,
+            ExecutionWindow.start <= current_time,
+            ExecutionWindow.end >= current_time
+            )
+        ).one_or_none()
+
     execution = Execution(task_id=task.id)
     try:
+        if hit_execution_window:
+            hit_execution_window.status = ExecutionWindowStatusEnum.HIT
+            execution.execution_window_id = hit_execution_window.id
+        session.add(hit_execution_window)
         session.add(execution)
         session.commit()
         click.echo(f'Execution {execution.id} added for Task {task.id} - {task.name}')
+        if hit_execution_window:
+            click.echo(f'Hit Execution Window {hit_execution_window.id}')
         return execution
     finally:
         session.close()
