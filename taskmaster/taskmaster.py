@@ -44,7 +44,13 @@ def show(task_id):
     try:
         task = session.query(Task).filter(Task.id == task_id).one()
         executions = session.query(Execution).filter(Execution.task_id == task.id).order_by(desc(Execution.executed_at)).all()
+        execution_windows = session.query(ExecutionWindow).filter(ExecutionWindow.task_id == task.id).order_by(desc(ExecutionWindow.start)).all()
         click.echo(f'{task.id} - {task.name}')
+        click.echo()
+        click.echo('Execution Windows:')
+        for execution_window in execution_windows:
+            click.echo(f'{execution_window.id} - {execution_window.start.strftime("%Y-%m-%d %H:%M")} to {execution_window.end.strftime("%Y-%m-%d %H:%M")} - ', nl=False)
+            click.secho(execution_window.status.value.upper(), fg='green')
         click.echo()
         click.echo('Executions:')
         for execution in executions:
