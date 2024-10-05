@@ -35,6 +35,13 @@ def create_task(name):
     finally:
         session.close()
 
+def get_task(task_id):
+    session = SessionLocal()
+    try:
+        return session.query(Task).filter(Task.id == task_id).one()
+    finally:
+        session.close()
+
 @click.command()
 def hello():
     click.echo("Hello world")
@@ -44,9 +51,8 @@ cli.add_command(hello)
 @click.command()
 @click.argument('task_id')
 def show(task_id):
-    session = SessionLocal()
     try:
-        task = session.query(Task).filter(Task.id == task_id).one()
+        task = get_task(task_id)
         executions = session.query(Execution).filter(Execution.task_id == task.id).order_by(desc(Execution.executed_at)).all()
         execution_windows = session.query(ExecutionWindow).filter(ExecutionWindow.task_id == task.id).order_by(desc(ExecutionWindow.start)).all()
         click.echo(f'{task.id} - {task.name}')
@@ -71,7 +77,7 @@ cli.add_command(show)
 @click.argument('task_id')
 def execute(task_id):
     session = SessionLocal()
-    task = session.query(Task).filter(Task.id == task_id).one()
+    task = get_task(task_id)
     current_time = datetime.utcnow()
 
     # The "hit" execution window is the one for this task that's currently open
@@ -145,7 +151,7 @@ def fuzzy_datetime_validator(input, raise_if_invalid = True):
 def schedule(task_id):
     session = SessionLocal()
     try:
-        task = session.query(Task).filter(Task.id == task_id).one()
+        task = get_task(task_id)
         click.echo(f'{task.id} - {task.name}')
     except NoResultFound:
         click.echo(f'Task with id {task_id} not found')
@@ -173,7 +179,7 @@ task.add_command(schedule)
 def edit(task_id):
     session = SessionLocal()
     try:
-        task = session.query(Task).filter(Task.id == task_id).one()
+        task = get_task(task_id)
         click.echo(f'{task.id} - {task.name}')
     except NoResultFound:
         click.echo(f'Task with id {task_id} not found')
