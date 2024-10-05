@@ -30,14 +30,6 @@ def hello():
 cli.add_command(hello)
 
 @click.command()
-def list():
-    tasks = get_tasks()
-    for task in tasks:
-        click.echo(f'{task.id} - {task.name}')
-
-cli.add_command(list)
-
-@click.command()
 @click.argument('task_id')
 def show(task_id):
     session = SessionLocal()

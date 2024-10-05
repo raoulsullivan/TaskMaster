@@ -3,12 +3,12 @@ from unittest.mock import patch, MagicMock
 import click
 from click.testing import CliRunner
 
-from taskmaster.taskmaster import list
+from taskmaster.cli import list
 
-class TestListCommand(unittest.TestCase):
+class TestCliTasksListCommand(unittest.TestCase):
     
-    @patch('taskmaster.taskmaster.get_tasks')
-    @patch('taskmaster.taskmaster.click.echo')
+    @patch('taskmaster.cli.get_tasks')
+    @patch('taskmaster.cli.click.echo')
     def test_list_command(self, mock_echo, mock_get_tasks):
         # Mock the tasks that get_tasks() should return
         mock_task_1 = MagicMock(id=1)
