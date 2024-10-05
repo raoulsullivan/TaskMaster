@@ -30,6 +30,7 @@ def create_task(name):
     try:
         session.add(task)
         session.commit()
+        session.refresh(task)
         return task
     finally:
         session.close()
