@@ -1,6 +1,6 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum
+from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, DailyFrequency, WeeklyFrequency
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
 from datetime import datetime, timedelta
@@ -47,6 +47,9 @@ def show(task_id):
         execution_windows = session.query(ExecutionWindow).filter(ExecutionWindow.task_id == task.id).order_by(desc(ExecutionWindow.start)).all()
         click.echo(f'{task.id} - {task.name}')
         click.echo()
+        click.echo('Frequency:')
+        click.echo(task.frequency.type)
+        click.echo()
         click.echo('Execution Windows:')
         for execution_window in execution_windows:
             click.echo(f'{execution_window.id} - {execution_window.start.strftime("%Y-%m-%d %H:%M")} to {execution_window.end.strftime("%Y-%m-%d %H:%M")} - ', nl=False)
@@ -65,6 +68,7 @@ cli.add_command(show)
 def add_task(name):
     session = SessionLocal()
     task = Task(name=name)
+    task.frequency = DailyFrequency()
     try:
         session.add(task)
         session.commit()
@@ -174,6 +178,40 @@ def schedule(task_id):
         session.close()
 
 task.add_command(schedule)
+
+@click.command()
+@click.argument('task_id')
+def edit(task_id):
+    session = SessionLocal()
+    try:
+        task = session.query(Task).filter(Task.id == task_id).one()
+        click.echo(f'{task.id} - {task.name}')
+    except NoResultFound:
+        click.echo(f'Task with id {task_id} not found')
+        click.Abort()
+
+    task.name = click.prompt('New name of task', type=str, default=task.name)
+    old_frequency_type = task.frequency.type
+    new_frequency_type_value = click.prompt('Choose task frequency', type=click.Choice([e.value for e in TaskFrequencyEnum], case_sensitive=False), show_choices=True, default=old_frequency_type.value)
+    new_frequency_type = TaskFrequencyEnum(new_frequency_type_value)
+    if new_frequency_type != old_frequency_type:
+        if new_frequency_type == TaskFrequencyEnum.DAILY:
+            session.delete(task.frequency)
+            session.commit()
+            task.frequency = DailyFrequency()
+        if new_frequency_type == TaskFrequencyEnum.WEEKLY:
+            day_of_week = click.prompt('Choose day of week (1 = Monday)', type=click.Choice(['1', '2', '3', '4', '5', '6', '7']), default='1')
+            session.delete(task.frequency)
+            session.commit()
+            task.frequency = WeeklyFrequency(day_of_week=int(day_of_week))
+    try:
+        session.add(task)
+        session.commit()
+        click.echo(f'Edited Task {task.id} - {task.name}')
+    finally:
+        session.close()
+
+task.add_command(edit)
 
 if __name__ == '__main__':
     cli()

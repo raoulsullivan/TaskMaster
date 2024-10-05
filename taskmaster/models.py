@@ -13,6 +13,12 @@ class ExecutionWindowStatusEnum(enum.Enum):
     SKIPPED = "skipped"
     MISSED = "missed"
 
+class TaskFrequencyEnum(enum.Enum):
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    #MONTHLY = "monthly-date" # e.g. "1st of every month"
+    #MONTHLY = "monthly-day" # e.g. "Last Sunday of every month"
+
 class Task(Base):
     __tablename__ = 'tasks'
     
@@ -20,6 +26,33 @@ class Task(Base):
     name = Column(String, nullable=False)
 
     executions = relationship('Execution', backref='task')
+    frequency = relationship('Frequency', backref='task', uselist=False, cascade="all, delete-orphan")
+
+class Frequency(Base):
+    """Frequencies determine how often a task should be performed"""
+    __tablename__ = "frequencies"
+    __mapper_args__ = {
+        'polymorphic_on': 'type',
+        'polymorphic_identity': 'frequency'
+    }
+    id = Column(Integer, primary_key=True)
+    type = Column(Enum(TaskFrequencyEnum), default=TaskFrequencyEnum.DAILY, nullable=False)
+    task_id = Column(Integer, ForeignKey('tasks.id'), unique=True, nullable=False)
+
+class DailyFrequency(Frequency):
+    __tablename__ = "daily_frequencies"
+    __mapper_args__ = {
+        'polymorphic_identity': TaskFrequencyEnum.DAILY
+    }
+    id = Column(Integer, ForeignKey('frequencies.id'), primary_key=True)
+
+class WeeklyFrequency(Frequency):
+    __tablename__ = "weekly_frequencies"
+    __mapper_args__ = {
+        'polymorphic_identity': TaskFrequencyEnum.WEEKLY
+    }
+    id = Column(Integer, ForeignKey('frequencies.id'), primary_key=True)
+    day_of_week = Column(Integer)
 
 class Execution(Base):
     __tablename__ = 'executions'
