@@ -23,6 +23,17 @@ def get_tasks():
         session.close()
     return tasks
 
+def create_task(name):
+    session = SessionLocal()
+    task = Task(name=name)
+    task.frequency = DailyFrequency()
+    try:
+        session.add(task)
+        session.commit()
+        return task
+    finally:
+        session.close()
+
 @click.command()
 def hello():
     click.echo("Hello world")
@@ -58,15 +69,7 @@ cli.add_command(show)
 @click.command()
 @click.argument('name')
 def add_task(name):
-    session = SessionLocal()
-    task = Task(name=name)
-    task.frequency = DailyFrequency()
-    try:
-        session.add(task)
-        session.commit()
-        return task
-    finally:
-        session.close()
+    create_task(name)
 
 cli.add_command(add_task)
 
