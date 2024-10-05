@@ -5,7 +5,7 @@ We'll use the Click library for this.
 """
 
 import click
-from taskmaster.taskmaster import get_tasks
+from taskmaster.taskmaster import get_tasks, create_task
 
 @click.group()
 def cli():
@@ -25,3 +25,11 @@ def list():
         click.echo(f'{task.id} - {task.name}')
 
 tasks.add_command(list)
+
+@click.command()
+@click.argument('name')
+def new(name):
+    task = create_task(name)
+    click.echo(f'Created {task.id} - {task.name}')
+
+tasks.add_command(new)

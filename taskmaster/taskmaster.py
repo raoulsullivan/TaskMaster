@@ -68,13 +68,6 @@ def show(task_id):
 cli.add_command(show)
 
 @click.command()
-@click.argument('name')
-def add_task(name):
-    create_task(name)
-
-cli.add_command(add_task)
-
-@click.command()
 @click.argument('task_id')
 def execute(task_id):
     session = SessionLocal()

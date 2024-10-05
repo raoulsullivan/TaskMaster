@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import click
 from click.testing import CliRunner
 
-from taskmaster.cli import list
+from taskmaster.cli import list, new
 
 class TestCliTasksListCommand(unittest.TestCase):
     
@@ -32,3 +32,20 @@ class TestCliTasksListCommand(unittest.TestCase):
         
         # Assert that echo was called twice (once for each task)
         self.assertEqual(mock_echo.call_count, 2)
+
+class TestCliTasksNewCommand(unittest.TestCase):
+
+    @patch('taskmaster.cli.create_task')
+    @patch('taskmaster.cli.click.echo')
+    def test_new_command(self, mock_echo, mock_create_task):
+        task_name = 'Some task'
+        mock_task_1 = MagicMock(id=1)
+        mock_task_1.name = task_name
+        mock_create_task.return_value = mock_task_1
+
+        runner = CliRunner()
+        result = runner.invoke(new, [task_name])
+
+        self.assertEqual(result.exit_code, 0)
+
+        mock_echo.assert_called_once_with(f'Created 1 - {task_name}')
