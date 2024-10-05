@@ -1,6 +1,6 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum
+from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, DailyFrequency, WeeklyFrequency
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
 from datetime import datetime, timedelta
@@ -47,6 +47,9 @@ def show(task_id):
         execution_windows = session.query(ExecutionWindow).filter(ExecutionWindow.task_id == task.id).order_by(desc(ExecutionWindow.start)).all()
         click.echo(f'{task.id} - {task.name}')
         click.echo()
+        click.echo('Frequency:')
+        click.echo(task.frequency.type)
+        click.echo()
         click.echo('Execution Windows:')
         for execution_window in execution_windows:
             click.echo(f'{execution_window.id} - {execution_window.start.strftime("%Y-%m-%d %H:%M")} to {execution_window.end.strftime("%Y-%m-%d %H:%M")} - ', nl=False)
@@ -65,6 +68,7 @@ cli.add_command(show)
 def add_task(name):
     session = SessionLocal()
     task = Task(name=name)
+    task.frequency = DailyFrequency()
     try:
         session.add(task)
         session.commit()
