@@ -26,6 +26,7 @@ class Task(Base):
     name = Column(String, nullable=False)
 
     executions = relationship('Execution', backref='task')
+    execution_windows = relationship('ExecutionWindow', backref='task')
     frequency = relationship('Frequency', backref='task', uselist=False, cascade="all, delete-orphan")
 
 class Frequency(Base):

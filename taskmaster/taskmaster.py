@@ -3,6 +3,7 @@ from taskmaster.database import SessionLocal
 from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, DailyFrequency, WeeklyFrequency
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
+from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 
 HELLO = "hello"
@@ -44,7 +45,11 @@ def create_task(name):
 def get_task(task_id):
     session = SessionLocal()
     try:
-        return session.query(Task).filter(Task.id == task_id).one()
+        return session.query(Task).options(
+            joinedload(Task.executions),
+            joinedload(Task.execution_windows),
+            joinedload(Task.frequency)
+        ).filter(Task.id == task_id).one()
     except NoResultFound:
         raise TaskNotFound(task_id)
     finally:
