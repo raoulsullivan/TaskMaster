@@ -15,6 +15,12 @@ DATABASE = "taskmaster.sqlite"
 def cli():
     pass
 
+class TaskNotFound(Exception):
+    def __init__(self, task_id, message="Task not found"):
+        self.task_id = task_id
+        self.message = f"{message}: Task ID {task_id}"
+        super().__init__(self.message)
+
 def get_tasks():
     session = SessionLocal()
     try:
@@ -39,6 +45,8 @@ def get_task(task_id):
     session = SessionLocal()
     try:
         return session.query(Task).filter(Task.id == task_id).one()
+    except NoResultFound:
+        raise TaskNotFound(task_id)
     finally:
         session.close()
 
@@ -68,8 +76,8 @@ def show(task_id):
         click.echo('Executions:')
         for execution in executions:
             click.echo(f'{execution.executed_at.strftime("%Y-%m-%d %H:%M")}')
-    except NoResultFound:
-        click.echo(f'Task with id {task_id} not found')
+    except TaskNotFound as e:
+        click.echo(e)
 
 cli.add_command(show)
 
@@ -153,8 +161,8 @@ def schedule(task_id):
     try:
         task = get_task(task_id)
         click.echo(f'{task.id} - {task.name}')
-    except NoResultFound:
-        click.echo(f'Task with id {task_id} not found')
+    except TaskNotFound as e:
+        click.echo(e)
         click.Abort()
 
     start_datetime_input = click.prompt('Please enter the start date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=datetime.now().strftime("%Y-%m-%d 00:00"))
@@ -181,8 +189,8 @@ def edit(task_id):
     try:
         task = get_task(task_id)
         click.echo(f'{task.id} - {task.name}')
-    except NoResultFound:
-        click.echo(f'Task with id {task_id} not found')
+    except TaskNotFound as e:
+        click.echo(e)
         click.Abort()
 
     task.name = click.prompt('New name of task', type=str, default=task.name)
