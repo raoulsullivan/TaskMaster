@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import click
 from click.testing import CliRunner
 
-from taskmaster.cli import list, new
+from taskmaster.cli import list, new, cli
 
 class TestCliTasksListCommand(unittest.TestCase):
     
@@ -49,3 +49,19 @@ class TestCliTasksNewCommand(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         mock_echo.assert_called_once_with(f'Created 1 - {task_name}')
+
+
+class TestCliTaskShowCommand(unittest.TestCase):
+
+    @patch('taskmaster.cli.get_task')
+    @patch('taskmaster.cli.click.echo')
+    def test_task_group(self, mock_echo, mock_get_task):
+        task_name = 'Some task'
+        mock_task_1 = MagicMock(id=1)
+        mock_task_1.name = task_name
+        mock_get_task.return_value = mock_task_1
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ['task', '1', 'show'])
+
+        self.assertEqual(result.exit_code, 0)

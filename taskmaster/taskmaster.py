@@ -63,31 +63,6 @@ cli.add_command(hello)
 
 @click.command()
 @click.argument('task_id')
-def show(task_id):
-    try:
-        task = get_task(task_id)
-        executions = session.query(Execution).filter(Execution.task_id == task.id).order_by(desc(Execution.executed_at)).all()
-        execution_windows = session.query(ExecutionWindow).filter(ExecutionWindow.task_id == task.id).order_by(desc(ExecutionWindow.start)).all()
-        click.echo(f'{task.id} - {task.name}')
-        click.echo()
-        click.echo('Frequency:')
-        click.echo(task.frequency.type)
-        click.echo()
-        click.echo('Execution Windows:')
-        for execution_window in execution_windows:
-            click.echo(f'{execution_window.id} - {execution_window.start.strftime("%Y-%m-%d %H:%M")} to {execution_window.end.strftime("%Y-%m-%d %H:%M")} - ', nl=False)
-            click.secho(execution_window.status.value.upper(), fg='green')
-        click.echo()
-        click.echo('Executions:')
-        for execution in executions:
-            click.echo(f'{execution.executed_at.strftime("%Y-%m-%d %H:%M")}')
-    except TaskNotFound as e:
-        click.echo(e)
-
-cli.add_command(show)
-
-@click.command()
-@click.argument('task_id')
 def execute(task_id):
     session = SessionLocal()
     task = get_task(task_id)
