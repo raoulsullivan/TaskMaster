@@ -1,6 +1,6 @@
 import click
 from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, DailyFrequency, WeeklyFrequency
+from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, Frequency, DailyFrequency, WeeklyFrequency
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import joinedload
@@ -20,6 +20,12 @@ class TaskNotFound(Exception):
     def __init__(self, task_id, message="Task not found"):
         self.task_id = task_id
         self.message = f"{message}: Task ID {task_id}"
+        super().__init__(self.message)
+
+class FrequencyNotFound(Exception):
+    def __init__(self, frequency_id, message="Frequency not found"):
+        self.frequency_id = frequency_id
+        self.message = f"{message}: Frequency ID {frequency_id}"
         super().__init__(self.message)
 
 def get_tasks():
@@ -54,6 +60,42 @@ def get_task(task_id):
         raise TaskNotFound(task_id)
     finally:
         session.close()
+
+def edit_task(task):
+    session = SessionLocal()
+    try:
+        session.add(task)
+        click.echo(f'Edited Task {task.id} - {task.name}')
+        session.commit()
+    finally:
+        session.close()
+
+def get_frequency(frequency_id):
+    session = SessionLocal()
+    try:
+        return session.query(Frequency).filter(Frequency.id == frequency_id).one()
+    except NoResultFound:
+        raise FrequencyNotFound(frequency_id)
+    finally:
+        session.close()
+
+def replace_frequency(frequency):
+    """ Task Frequency is stored as a polymorphic object
+    so changing it involves deleting the old one first"""
+    session = SessionLocal()
+    existing_frequency = session.query(Frequency).filter(Frequency.task_id == frequency.task_id).one_or_none()
+
+    try:
+        if existing_frequency:
+            session.delete(existing_frequency)
+            session.commit()
+            click.echo(f'Removed existing Frequency {existing_frequency.id}')
+        session.add(frequency)
+        click.echo(f'Created new Frequency {frequency.id} for Task {frequency.task_id}')
+        session.commit()
+    finally:
+        session.close()
+
 
 @click.command()
 def hello():
@@ -173,28 +215,49 @@ def edit(task_id):
         click.echo(e)
         click.Abort()
 
+    # The call to edit_task will commit the task, unbinding it from the Session
+    # and making the Frequency unavailable
+    old_frequency = task.frequency
+    old_frequency_type = old_frequency and old_frequency.type
+    old_frequency_id = old_frequency and old_frequency.id
+
     task.name = click.prompt('New name of task', type=str, default=task.name)
-    old_frequency_type = task.frequency.type
-    new_frequency_type_value = click.prompt('Choose task frequency', type=click.Choice([e.value for e in TaskFrequencyEnum], case_sensitive=False), show_choices=True, default=old_frequency_type.value)
-    new_frequency_type = TaskFrequencyEnum(new_frequency_type_value)
-    if new_frequency_type != old_frequency_type:
-        if new_frequency_type == TaskFrequencyEnum.DAILY:
-            session.delete(task.frequency)
-            session.commit()
-            task.frequency = DailyFrequency()
-        if new_frequency_type == TaskFrequencyEnum.WEEKLY:
-            day_of_week = click.prompt('Choose day of week (1 = Monday)', type=click.Choice(['1', '2', '3', '4', '5', '6', '7']), default='1')
-            session.delete(task.frequency)
-            session.commit()
-            task.frequency = WeeklyFrequency(day_of_week=int(day_of_week))
-    try:
-        session.add(task)
-        session.commit()
-        click.echo(f'Edited Task {task.id} - {task.name}')
-    finally:
-        session.close()
+    edit_task(task)
+
+    change_frequency = click.prompt(f'Do you want to change the task Frequency (currently {old_frequency_type})?', type=bool,
+        default=False)
+
+    if change_frequency:
+        edit_frequency(str(old_frequency_id))
 
 task.add_command(edit)
+
+@click.command()
+@click.argument('frequency_id')
+def edit_frequency(frequency_id):
+    """Editing a Frequency is a bit messy because this is a polymorphic object
+    so if the type changes we need to delete and recreate the object entirely.
+    Easier to just do this in all cases"""
+    session = SessionLocal()
+    try:
+        old_frequency = get_frequency(frequency_id)
+        click.echo(f'{old_frequency.id}')
+    except FrequencyNotFound as e:
+        click.echo(e)
+        click.Abort()
+
+    new_frequency_type_value = click.prompt('Choose Frequency type', type=click.Choice([e.value for e in TaskFrequencyEnum], case_sensitive=False), show_choices=True, default=TaskFrequencyEnum.DAILY.value)
+    new_frequency_type = TaskFrequencyEnum(new_frequency_type_value)
+
+    if new_frequency_type == TaskFrequencyEnum.DAILY:
+        new_frequency = DailyFrequency(task_id=old_frequency.task_id)
+    elif new_frequency_type == TaskFrequencyEnum.WEEKLY:
+        day_of_week = click.prompt('Choose day of week (1 = Monday)', type=click.Choice(['1', '2', '3', '4', '5', '6', '7']), default='1')
+        new_frequency = WeeklyFrequency(task_id=old_frequency.task_id, day_of_week=int(day_of_week))
+
+    replace_frequency(new_frequency)
+
+task.add_command(edit_frequency)
 
 if __name__ == '__main__':
     cli()
