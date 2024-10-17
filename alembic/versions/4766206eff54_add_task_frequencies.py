@@ -30,13 +30,13 @@ def upgrade() -> None:
     )
     op.create_table('daily_frequencies',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id'], ['frequencies.id'], ),
+    sa.ForeignKeyConstraint(['id'], ['frequencies.id']),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('weekly_frequencies',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('day_of_week', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['id'], ['frequencies.id'], ),
+    sa.ForeignKeyConstraint(['id'], ['frequencies.id']),
     sa.PrimaryKeyConstraint('id')
     )
     op.execute("""
