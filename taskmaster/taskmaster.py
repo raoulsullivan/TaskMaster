@@ -96,18 +96,9 @@ def replace_frequency(frequency):
     finally:
         session.close()
 
-
-@click.command()
-def hello():
-    click.echo("Hello world")
-
-cli.add_command(hello)
-
-@click.command()
-@click.argument('task_id')
-def execute(task_id):
+def execute_task(task_id):
+    """Creates an execution, also marks any open execution window as hit"""
     session = SessionLocal()
-    task = get_task(task_id)
     current_time = datetime.utcnow()
 
     # The "hit" execution window is the one for this task that's currently open
@@ -119,23 +110,28 @@ def execute(task_id):
             ExecutionWindow.end >= current_time
             )
         ).one_or_none()
-
-    execution = Execution(task_id=task.id)
+    execution = Execution(task_id=task_id)
     try:
         if hit_execution_window:
             hit_execution_window.status = ExecutionWindowStatusEnum.HIT
-            execution.execution_window_id = hit_execution_window.id
-        session.add(hit_execution_window)
+            execution.execution_window = hit_execution_window
+            session.add(hit_execution_window)
         session.add(execution)
         session.commit()
-        click.echo(f'Execution {execution.id} added for Task {task.id} - {task.name}')
-        if hit_execution_window:
-            click.echo(f'Hit Execution Window {hit_execution_window.id}')
+        # Reload to get the execution window
+        execution = session.query(Execution).options(
+            joinedload(Execution.execution_window)
+        ).filter(Execution.id == execution.id).one()
         return execution
     finally:
         session.close()
 
-cli.add_command(execute)
+
+@click.command()
+def hello():
+    click.echo("Hello world")
+
+cli.add_command(hello)
 
 @click.group()
 def task():
