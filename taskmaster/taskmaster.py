@@ -4,7 +4,7 @@ from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowS
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import joinedload
-from datetime import datetime, timedelta
+from datetime import datetime
 from taskmaster.utils import fuzzy_datetime_validator
 
 HELLO = "hello"
@@ -127,6 +127,14 @@ def execute_task(task_id):
     finally:
         session.close()
 
+def add_execution_window(execution_window):
+    session = SessionLocal()
+    try:
+        session.add(execution_window)
+        session.commit()
+    finally:
+        session.close()
+
 
 @click.command()
 def hello():
@@ -140,34 +148,6 @@ def task():
     pass
 
 cli.add_command(task)
-
-@click.command()
-@click.argument('task_id')
-def schedule(task_id):
-    session = SessionLocal()
-    try:
-        task = get_task(task_id)
-        click.echo(f'{task.id} - {task.name}')
-    except TaskNotFound as e:
-        click.echo(e)
-        click.Abort()
-
-    start_datetime_input = click.prompt('Please enter the start date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=datetime.now().strftime("%Y-%m-%d 00:00"))
-    start_datetime = fuzzy_datetime_validator(start_datetime_input)
-
-    default_end_datetime = start_datetime + timedelta(days=1)
-    end_datetime_input = click.prompt('Please enter the end date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=default_end_datetime.strftime("%Y-%m-%d 00:00"))
-    end_datetime = fuzzy_datetime_validator(end_datetime_input)
-
-    execution_window = ExecutionWindow(task_id=task.id, start=start_datetime, end=end_datetime)
-    try:
-        session.add(execution_window)
-        session.commit()
-        click.echo(f'Added an Execution Window ({execution_window.id}) for Task {task.id} - {task.name} between {execution_window.start} and {execution_window.end}')
-    finally:
-        session.close()
-
-task.add_command(schedule)
 
 if __name__ == '__main__':
     cli()
