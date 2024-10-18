@@ -5,7 +5,7 @@ We'll use the Click library for this.
 """
 
 import click
-from taskmaster.taskmaster import get_tasks, create_task, get_task, edit_task, TaskNotFound, get_frequency_by_task_id, FrequencyNotFound, replace_frequency
+from taskmaster.taskmaster import get_tasks, create_task, get_task, edit_task, TaskNotFound, get_frequency_by_task_id, FrequencyNotFound, replace_frequency, execute_task
 from taskmaster.models import TaskFrequencyEnum, WeeklyFrequency, DailyFrequency
 
 @click.group()
@@ -117,3 +117,14 @@ def edit_frequency(ctx):
     replace_frequency(new_frequency)
 
 task.add_command(edit_frequency)
+
+@click.command()
+@click.pass_context
+def execute(ctx):
+    task = ctx.obj['task']
+    execution = execute_task(task.id)
+    click.echo(f'Execution {execution.id} added for Task {task.id} - {task.name}')
+    if execution.execution_window:
+        click.echo(f'Hit Execution Window {execution.execution_window.id}')
+
+task.add_command(execute)
