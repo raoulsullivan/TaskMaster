@@ -10,7 +10,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'taskmaster = taskmaster.taskmaster:cli',
+            'taskmaster = taskmaster.cli:cli',
         ],
     },
 )

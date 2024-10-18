@@ -83,6 +83,7 @@ def edit(ctx):
 
     task.name = click.prompt('New name of task', type=str, default=task.name)
     edit_task(task)
+    click.echo(f'Edited Task {task.id} - {task.name}')
 
     change_frequency = click.prompt(f'Do you want to change the task Frequency (currently {old_frequency_type})?', type=bool,
         default=False)
@@ -117,6 +118,7 @@ def edit_frequency(ctx):
         new_frequency = WeeklyFrequency(task_id=old_frequency.task_id, day_of_week=int(day_of_week))
 
     replace_frequency(new_frequency)
+    click.echo(f'Created new Frequency {new_frequency.id} for Task {new_frequency.task_id}')
 
 task.add_command(edit_frequency)
 
