@@ -5,8 +5,10 @@ We'll use the Click library for this.
 """
 
 import click
-from taskmaster.taskmaster import get_tasks, create_task, get_task, edit_task, TaskNotFound, get_frequency_by_task_id, FrequencyNotFound, replace_frequency, execute_task
-from taskmaster.models import TaskFrequencyEnum, WeeklyFrequency, DailyFrequency
+from taskmaster.taskmaster import get_tasks, create_task, get_task, edit_task, TaskNotFound, get_frequency_by_task_id, FrequencyNotFound, replace_frequency, execute_task, add_execution_window
+from taskmaster.models import TaskFrequencyEnum, WeeklyFrequency, DailyFrequency, ExecutionWindow
+from taskmaster.utils import fuzzy_datetime_validator
+from datetime import datetime, timedelta
 
 @click.group()
 def cli():
@@ -128,3 +130,21 @@ def execute(ctx):
         click.echo(f'Hit Execution Window {execution.execution_window.id}')
 
 task.add_command(execute)
+
+@click.command()
+@click.pass_context
+def schedule(ctx):
+    task = ctx.obj['task']
+
+    start_datetime_input = click.prompt('Please enter the start date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=datetime.now().strftime("%Y-%m-%d 00:00"))
+    start_datetime = fuzzy_datetime_validator(start_datetime_input)
+
+    default_end_datetime = start_datetime + timedelta(days=1)
+    end_datetime_input = click.prompt('Please enter the end date (YYYY-MM-DD or YYYY-MM-DD HH:mm)', type=str, default=default_end_datetime.strftime("%Y-%m-%d 00:00"))
+    end_datetime = fuzzy_datetime_validator(end_datetime_input)
+
+    execution_window = ExecutionWindow(task_id=task.id, start=start_datetime, end=end_datetime)
+    add_execution_window(execution_window)
+    click.echo(f'Added an Execution Window ({execution_window.id}) for Task {task.id} - {task.name} between {execution_window.start} and {execution_window.end}')
+
+task.add_command(schedule)
