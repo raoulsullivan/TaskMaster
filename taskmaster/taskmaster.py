@@ -1,21 +1,18 @@
-import click
+"""
+This module contains the application logic for Taskmaster
+including the functions that speak to the database.
+
+Call the functions here from the modules that contain the interfaces
+"""
+
 from taskmaster.database import SessionLocal
 from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, Frequency, DailyFrequency, WeeklyFrequency
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime
-from taskmaster.utils import fuzzy_datetime_validator
 
-HELLO = "hello"
-LIST = "list"
-ADD = 'add'
-CHOICES = [HELLO, LIST, ADD]
 DATABASE = "taskmaster.sqlite"
-
-@click.group()
-def cli():
-    pass
 
 class TaskNotFound(Exception):
     def __init__(self, task_id, message="Task not found"):
@@ -66,7 +63,6 @@ def edit_task(task):
     session = SessionLocal()
     try:
         session.add(task)
-        click.echo(f'Edited Task {task.id} - {task.name}')
         session.commit()
     finally:
         session.close()
@@ -90,9 +86,7 @@ def replace_frequency(frequency):
         if existing_frequency:
             session.delete(existing_frequency)
             session.commit()
-            click.echo(f'Removed existing Frequency {existing_frequency.id}')
         session.add(frequency)
-        click.echo(f'Created new Frequency {frequency.id} for Task {frequency.task_id}')
         session.commit()
     finally:
         session.close()
@@ -134,20 +128,3 @@ def add_execution_window(execution_window):
         session.commit()
     finally:
         session.close()
-
-
-@click.command()
-def hello():
-    click.echo("Hello world")
-
-cli.add_command(hello)
-
-@click.group()
-def task():
-    """Task management commands."""
-    pass
-
-cli.add_command(task)
-
-if __name__ == '__main__':
-    cli()
