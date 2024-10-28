@@ -26,14 +26,16 @@ class Task(Base):
     name = Column(String, nullable=False)
 
     executions = relationship('Execution', backref='task')
-    frequency = relationship('Frequency', backref='task', uselist=False, cascade="all, delete-orphan")
+    execution_windows = relationship('ExecutionWindow', backref='task')
+    frequency = relationship('Frequency', backref='task', uselist=False, cascade="all, delete, delete-orphan")
 
 class Frequency(Base):
     """Frequencies determine how often a task should be performed"""
     __tablename__ = "frequencies"
     __mapper_args__ = {
         'polymorphic_on': 'type',
-        'polymorphic_identity': 'frequency'
+        'polymorphic_identity': 'frequency',
+        'with_polymorphic': '*'
     }
     id = Column(Integer, primary_key=True)
     type = Column(Enum(TaskFrequencyEnum), default=TaskFrequencyEnum.DAILY, nullable=False)
@@ -44,14 +46,14 @@ class DailyFrequency(Frequency):
     __mapper_args__ = {
         'polymorphic_identity': TaskFrequencyEnum.DAILY
     }
-    id = Column(Integer, ForeignKey('frequencies.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('frequencies.id', ondelete="cascade"), primary_key=True)
 
 class WeeklyFrequency(Frequency):
     __tablename__ = "weekly_frequencies"
     __mapper_args__ = {
         'polymorphic_identity': TaskFrequencyEnum.WEEKLY
     }
-    id = Column(Integer, ForeignKey('frequencies.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('frequencies.id', ondelete="cascade"), primary_key=True)
     day_of_week = Column(Integer)
 
 class Execution(Base):
