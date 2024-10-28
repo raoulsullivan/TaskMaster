@@ -15,3 +15,8 @@ Need neested commands from the CLI, hard to do with just Argparse
 This thing will eventually expose its interface over HTTP, maybe using an API or a simple webpage.
 The simplest hosting combination I know of right now is Gunicorn and Nginx.
 Rather than do the whole DevOps song and dance I'll stick the bare minimum to remind myself how to set it up in this repo.
+
+# 2024-10-28 Lint using Flake8
+
+Add a linter before the code gets too messy. Flake8 defaults will do the job.
+Pre-commit hook since we don't have CI.
