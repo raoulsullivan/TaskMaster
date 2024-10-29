@@ -5,14 +5,19 @@ including the functions that speak to the database.
 Call the functions here from the modules that contain the interfaces
 """
 
-from taskmaster.database import SessionLocal
-from taskmaster.models import Task, Execution, ExecutionWindow, ExecutionWindowStatusEnum, TaskFrequencyEnum, Frequency, DailyFrequency, WeeklyFrequency
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy import desc, and_
-from sqlalchemy.orm import joinedload
 from datetime import datetime
 
+from sqlalchemy import and_
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import joinedload
+
+from taskmaster.database import SessionLocal
+from taskmaster.models import (DailyFrequency, Execution, ExecutionWindow,
+                               ExecutionWindowStatusEnum, Frequency, Task)
+
+
 DATABASE = "taskmaster.sqlite"
+
 
 class TaskNotFound(Exception):
     def __init__(self, task_id, message="Task not found"):
@@ -20,11 +25,13 @@ class TaskNotFound(Exception):
         self.message = f"{message}: Task ID {task_id}"
         super().__init__(self.message)
 
+
 class FrequencyNotFound(Exception):
     def __init__(self, task_id, message="Frequency not found for Task"):
-        self.frequency_id = frequency_id
+        self.task_id = task_id
         self.message = f"{message}: Task ID {task_id}"
         super().__init__(self.message)
+
 
 def get_tasks():
     session = SessionLocal()
@@ -33,6 +40,7 @@ def get_tasks():
     finally:
         session.close()
     return tasks
+
 
 def create_task(name):
     session = SessionLocal()
@@ -45,6 +53,7 @@ def create_task(name):
         return task
     finally:
         session.close()
+
 
 def get_task(task_id):
     session = SessionLocal()
@@ -59,6 +68,7 @@ def get_task(task_id):
     finally:
         session.close()
 
+
 def edit_task(task):
     session = SessionLocal()
     try:
@@ -67,20 +77,25 @@ def edit_task(task):
     finally:
         session.close()
 
+
 def get_frequency_by_task_id(task_id):
     session = SessionLocal()
     try:
-        return session.query(Frequency).filter(Frequency.task_id == task_id).one()
+        return (session.query(Frequency)
+                .filter(Frequency.task_id == task_id).one())
     except NoResultFound:
         raise FrequencyNotFound(task_id)
     finally:
         session.close()
 
+
 def replace_frequency(frequency):
     """ Task Frequency is stored as a polymorphic object
     so changing it involves deleting the old one first"""
     session = SessionLocal()
-    existing_frequency = session.query(Frequency).filter(Frequency.task_id == frequency.task_id).one_or_none()
+    existing_frequency = (session.query(Frequency)
+                          .filter(Frequency.task_id == frequency.task_id)
+                          .one_or_none())
 
     try:
         if existing_frequency:
@@ -90,6 +105,7 @@ def replace_frequency(frequency):
         session.commit()
     finally:
         session.close()
+
 
 def execute_task(task_id):
     """Creates an execution, also marks any open execution window as hit"""
@@ -120,6 +136,7 @@ def execute_task(task_id):
         return execution
     finally:
         session.close()
+
 
 def add_execution_window(execution_window):
     session = SessionLocal()

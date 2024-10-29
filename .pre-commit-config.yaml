@@ -6,3 +6,8 @@ repos:
         entry: python -m unittest discover
         language: system
         pass_filenames: false
+  - repo: https://github.com/pycqa/flake8
+    rev: '7.1.1'  # Use the latest stable version
+    hooks:
+      - id: flake8
+        files: ^taskmaster/
