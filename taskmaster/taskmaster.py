@@ -163,6 +163,22 @@ def _get_execution_window_start_and_end(frequency, from_datetime):
             f'Unsupport Frequency type {frequency.type}')
 
 
+def check_if_execution_window_overlaps(task, execution_window):
+    """We generally don't want overlaps"""
+    open_windows = [
+        x for x in task.execution_windows
+        if x.status == ExecutionWindowStatusEnum.OPEN
+    ]
+    for window in open_windows:
+        # Check if there is any overlap (full or partial)
+        if (
+            execution_window.start < window.end
+            and execution_window.end > window.start
+        ):
+            return window
+    return None
+
+
 def add_execution_window(execution_window):
     session = SessionLocal()
     try:
