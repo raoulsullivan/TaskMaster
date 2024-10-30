@@ -7,17 +7,20 @@ filelock==3.16.1
 flake8==7.1.1
 flake8-import-order==0.18.2
 greenlet==3.1.0
+gunicorn==23.0.0
 identify==2.6.1
+Jinja2==3.1.4
 Mako==1.3.5
 MarkupSafe==2.1.5
 mccabe==0.7.0
 nodeenv==1.9.1
+packaging==24.1
 platformdirs==4.3.6
 pre-commit==3.8.0
 pycodestyle==2.12.1
 pyflakes==3.2.0
 PyYAML==6.0.2
 SQLAlchemy==2.0.34
--e git+ssh://git@github.com/raoulsullivan/TaskMaster.git@721c3ccc6936360535532c77f3d4b567de0a5777#egg=taskmaster
+-e git+ssh://git@github.com/raoulsullivan/TaskMaster.git@7cf4c84b4131d8efc17cce9babf255ec0e76fd36#egg=taskmaster
 typing_extensions==4.12.2
 virtualenv==20.26.6
