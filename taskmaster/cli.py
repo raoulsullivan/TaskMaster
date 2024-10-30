@@ -10,8 +10,10 @@ import click
 from taskmaster.models import (DailyFrequency, ExecutionWindow,
                                TaskFrequencyEnum, WeeklyFrequency)
 from taskmaster.taskmaster import (FrequencyNotFound, TaskNotFound,
-                                   add_execution_window, create_task,
-                                   edit_task, execute_task,
+                                   add_execution_window,
+                                   check_if_execution_window_overlaps,
+                                   create_task, edit_task, execute_task,
+                                   generate_next_execution_window,
                                    get_frequency_by_task_id, get_task,
                                    get_tasks, replace_frequency)
 from taskmaster.utils import fuzzy_datetime_validator
@@ -164,6 +166,26 @@ def execute(ctx):
 {task.name}')
     if execution.execution_window:
         click.echo(f'Hit Execution Window {execution.execution_window.id}')
+
+    try:
+        execution_window = generate_next_execution_window(task)
+        overlap_window = check_if_execution_window_overlaps(task,
+                                                            execution_window)
+        if overlap_window:
+            click.echo(f'Existing Execution Window {overlap_window.id} \
+between {overlap_window.start} and {overlap_window.end} will do')
+            return
+        accept = click.prompt(f'Suggest new Execution Window between \
+{execution_window.start} and {execution_window.end}', type=bool, default=True)
+        if accept:
+            add_execution_window(execution_window)
+            click.echo(f'Added an Execution Window ({execution_window.id}) for\
+Task {task.id} - {task.name} between {execution_window.start} and \
+{execution_window.end}')
+        else:
+            click.echo('No new Execution Window scheduled')
+    except FrequencyNotFound:
+        click.echo(f'No Frequency defined for Task {task.id}')
 
 
 task.add_command(execute)

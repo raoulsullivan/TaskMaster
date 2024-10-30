@@ -5,7 +5,7 @@ including the functions that speak to the database.
 Call the functions here from the modules that contain the interfaces
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import and_
 from sqlalchemy.exc import NoResultFound
@@ -136,6 +136,47 @@ def execute_task(task_id):
         return execution
     finally:
         session.close()
+
+
+def generate_next_execution_window(task):
+    """This generates a new Execution Window for the Task
+    based on the Frequency"""
+    if not task.frequency:
+        raise FrequencyNotFound(task.id)
+
+    start, end = _get_execution_window_start_and_end(
+        task.frequency, datetime.utcnow()
+    )
+    return ExecutionWindow(task_id=task.id, start=start, end=end)
+
+
+def _get_execution_window_start_and_end(frequency, from_datetime):
+    """Given the from_datetime, the Frequency determines when the start and end
+    of an execution window should be"""
+    if isinstance(frequency, DailyFrequency):
+        start = from_datetime + timedelta(days=1)
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        return start, end
+    else:
+        raise NotImplementedError(
+            f'Unsupport Frequency type {frequency.type}')
+
+
+def check_if_execution_window_overlaps(task, execution_window):
+    """We generally don't want overlaps"""
+    open_windows = [
+        x for x in task.execution_windows
+        if x.status == ExecutionWindowStatusEnum.OPEN
+    ]
+    for window in open_windows:
+        # Check if there is any overlap (full or partial)
+        if (
+            execution_window.start < window.end
+            and execution_window.end > window.start
+        ):
+            return window
+    return None
 
 
 def add_execution_window(execution_window):
