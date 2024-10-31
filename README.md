@@ -12,7 +12,7 @@ SQLite for persistance
 Install Python 3.11, Sqlite
 New virtual environment with `python -m venv .taskmaster`
 Activate virtual environment `source .taskmaster/bin/activate`
-`pip install requirements.txt`
+`pip install requirements-dev.txt`
 Create a new database 'taskmaster.sqlite'
 `alembic upgrade head`
 Install it as an executable `pip install --editable .`
