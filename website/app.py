@@ -4,6 +4,7 @@ and registers the controller functions with the router.
 """
 from jinja2 import Environment, FileSystemLoader
 
+from taskmaster.taskmaster import get_tasks
 from website.router import Router
 from website.htmlresponse import HTMLResponse, HTTPStatus
 
@@ -43,13 +44,13 @@ class RouteNotFound(Exception):
         super().__init__(self.message)
 
 
-def hello_world():
+def hello():
     template = env.get_template('hello.html')
-    content = 'Hello, World, this is TaskMaster!'
-    data = {'content': content}
+    tasks = get_tasks()
+    data = {'tasks': tasks}
     html_output = template.render(data)
     return HTMLResponse(body=html_output)
 
 
 router = Router()
-router.add_route("/hello-world", hello_world)
+router.add_route("/", hello)

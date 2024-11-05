@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Taskmaster</title>
+    <title>TaskMaster</title>
 </head>
 <body>
-    <p>{{ content }}</p>
+    <p>Welcome to TaskMaster. There are currently {{ tasks|length }} Tasks in the database:</p>
+    <ul>
+    {% for task in tasks %}
+        <li><a href="/tasks/{{ task.id }}">{{ task.name }}</a></li>
+    {% endfor %}
+    </ul>
 </body>
 </html>
