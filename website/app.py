@@ -4,10 +4,10 @@ and registers the controller functions with the router.
 """
 from jinja2 import Environment, FileSystemLoader
 
-from router import Router
-from htmlresponse import HTMLResponse, HTTPStatus
+from website.router import Router
+from website.htmlresponse import HTMLResponse, HTTPStatus
 
-env = Environment(loader=FileSystemLoader('templates'))
+env = Environment(loader=FileSystemLoader('website/templates'))
 
 
 def handle_request(url_path):

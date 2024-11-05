@@ -34,7 +34,7 @@ There's a helper script, `deploy.sh`, that will:
 
 ### Gunicorn
 
-Run Gunicorn with `sudo gunicorn --bind unix:/var/www/taskmaster/taskmaster.sock --workers 3 --chdir /var/www/taskmaster/website app:app`
+Run Gunicorn with `sudo gunicorn --bind unix:/var/www/taskmaster/taskmaster.sock --workers 3 --chdir /var/www/taskmaster website.app:app`
 
 TODO - run this as a demon
 
