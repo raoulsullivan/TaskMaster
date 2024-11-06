@@ -5,43 +5,46 @@ and registers the controller functions with the router.
 from jinja2 import Environment, FileSystemLoader
 
 from taskmaster.taskmaster import get_tasks
-from website.router import Router
+from website.router import HTTPMethod, Router, MethodNotAllowed, RouteNotFound
 from website.htmlresponse import HTMLResponse, HTTPStatus
 
 env = Environment(loader=FileSystemLoader('website/templates'))
 
 
-def handle_request(url_path):
+def handle_request(url_path, method):
     """Responsible for calling the handler function"""
-    handler, params = router.match(url_path)
-    if handler:
-        return handler(**params)
-    else:
-        raise RouteNotFound(url_path)
+    handler, params = router.match(url_path, method)
+    return handler(**params)
 
 
 def app(environ, start_response):
     """Entry point to the web application
     Responsible for getting a Response and passing it to Gunicorn"""
     path = environ.get('PATH_INFO', '')
+    method = environ.get('REQUEST_METHOD')
     try:
-        response = handle_request(path)
-    except RouteNotFound:
-        template = env.get_template('not_found.html')
-        html_output = template.render()
+        response = handle_request(path, method)
+    except RouteNotFound as e:
+        template = env.get_template('error.html')
+        html_output = template.render({'error_message': e})
         response = HTMLResponse(body=html_output,
                                 status_code=HTTPStatus.NOT_FOUND)
+    except MethodNotAllowed as e:
+        template = env.get_template('error.html')
+        html_output = template.render({'error_message': e})
+        response = HTMLResponse(body=html_output,
+                                status_code=HTTPStatus.METHOD_NOT_ALLOWED)
+    except Exception as e:
+        # Yes, we do want to catch all other exceptions here
+        # otherwise we just get the default Nginx Internal Server Error page
+        template = env.get_template('error.html')
+        html_output = template.render({'error_message': e})
+        response = HTMLResponse(body=html_output,
+                                status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     headers = [(k, v) for k, v in response.headers.items()]
     start_response(response.status_code.value, headers)
     return [response.body]
-
-
-class RouteNotFound(Exception):
-    def __init__(self, url, message="Route not found"):
-        self.url = url
-        self.message = f"{message}: URL {url}"
-        super().__init__(self.message)
 
 
 def hello():
@@ -53,4 +56,4 @@ def hello():
 
 
 router = Router()
-router.add_route("/", hello)
+router.add_route("/", hello, HTTPMethod.GET)
