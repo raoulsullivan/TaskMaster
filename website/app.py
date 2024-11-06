@@ -16,7 +16,7 @@ def handle_request(environ):
     url_path = environ.get('PATH_INFO', '')
     method = environ.get('REQUEST_METHOD')
     handler, params = router.match(url_path, method)
-    return handler(**params)
+    return handler(environ, **params)
 
 
 def app(environ, start_response):
@@ -47,7 +47,7 @@ def app(environ, start_response):
     return [response.body]
 
 
-def hello():
+def hello(environ):
     template = env.get_template('hello.html')
     tasks = get_tasks()
     data = {'tasks': tasks}
