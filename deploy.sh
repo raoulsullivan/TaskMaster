@@ -7,6 +7,7 @@ DEST_DIR="/var/www/taskmaster"
 usage() {
     echo "Usage: $0 <username@remote_host>"
     echo "This script will transfer the contents of the current directory to $DEST_DIR on the remote machine."
+    echo "It will then activate virtual environment .taskmaster and install requirements.txt"
     echo "Example: $0 user@192.168.2.2"
     exit 1
 }
@@ -60,3 +61,10 @@ else
     echo "Error: Failed to move files or set permissions."
     exit 1
 fi
+
+# Activate virtual environment and install requirements.txt
+ssh "$REMOTE_HOST" << EOF
+  cd $DEST_DIR
+  source .taskmaster/bin/activate
+  sudo pip install -r requirements.txt
+EOF

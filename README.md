@@ -12,11 +12,17 @@ SQLite for persistance
 Install Python 3.11, Sqlite
 New virtual environment with `python -m venv .taskmaster`
 Activate virtual environment `source .taskmaster/bin/activate`
-`pip install requirements-dev.txt`
+`pip install -r requirements-dev.txt`
 Create a new database 'taskmaster.sqlite'
 `alembic upgrade head`
 Install it as an executable `pip install --editable .`
 Run with `taskmaster`
+
+## Running webserver locally
+
+You can serve this directly from Gunicorn for local development only. Just run
+
+`gunicorn --reload website.app:app`
 
 ## Hosting
 
@@ -34,9 +40,24 @@ There's a helper script, `deploy.sh`, that will:
 
 ### Gunicorn
 
-Run Gunicorn with `sudo gunicorn --bind unix:/var/www/taskmaster/taskmaster.sock --workers 3 --chdir /var/www/taskmaster/website app:app`
+Sample `gunicorn.service` file:
 
-TODO - run this as a demon
+
+```
+[Unit]
+Description=Gunicorn instance to serve Taskmaster
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/taskmaster
+Environment="PATH=/var/www/taskmaster/.taskmaster/bin"
+ExecStart=/usr/bin/gunicorn --reload --workers 3 --bind unix:/var/www/taskmaster/taskmaster.sock website.app:app
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ### Nginx
 
