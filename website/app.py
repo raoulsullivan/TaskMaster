@@ -11,8 +11,10 @@ from website.htmlresponse import HTMLResponse, HTTPStatus
 env = Environment(loader=FileSystemLoader('website/templates'))
 
 
-def handle_request(url_path, method):
+def handle_request(environ):
     """Responsible for calling the handler function"""
+    url_path = environ.get('PATH_INFO', '')
+    method = environ.get('REQUEST_METHOD')
     handler, params = router.match(url_path, method)
     return handler(**params)
 
@@ -20,10 +22,8 @@ def handle_request(url_path, method):
 def app(environ, start_response):
     """Entry point to the web application
     Responsible for getting a Response and passing it to Gunicorn"""
-    path = environ.get('PATH_INFO', '')
-    method = environ.get('REQUEST_METHOD')
     try:
-        response = handle_request(path, method)
+        response = handle_request(environ)
     except RouteNotFound as e:
         template = env.get_template('error.html')
         html_output = template.render({'error_message': e})
