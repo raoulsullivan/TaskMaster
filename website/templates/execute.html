@@ -1,0 +1,12 @@
+{% block content %}
+<form action="/tasks/execute" method="POST">
+    <label for="task-select">Choose a task:</label>
+    <select name="task_id" id="task-select" required>
+        {% for task in tasks %}
+            <option value="{{ task.id }}">{{ task.name }}</option>
+        {% endfor %}
+    </select>
+    <br/>
+    <button type="submit">Execute Task</button>
+</form>
+{% endblock %}
